@@ -23,7 +23,9 @@ class WP_Internal_Link_Automator {
         // The main SEO logic hook
         add_filter( 'the_content', array( $this, 'auto_link_keywords' ) );
     }
-
+// CHANGED: Priority set to 99 to run AFTER themes/builders
+        add_filter( 'the_content', array( $this, 'auto_link_keywords' ), 99 );
+    }
     public function add_plugin_page() {
         add_options_page(
             'Internal Link Automator',
