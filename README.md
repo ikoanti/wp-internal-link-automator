@@ -23,3 +23,4 @@ This plugin parses post content and automatically links targeted keywords to spe
 ```text
 SEO Audit|https://example.com/services/audit
 Technical SEO|https://example.com/blog/technical-seo-guide
+```
