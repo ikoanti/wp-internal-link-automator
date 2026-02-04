@@ -16,7 +16,7 @@ This plugin parses post content and automatically links targeted keywords to spe
 ## 🛠 Installation & Usage
 1. Download the repo as a ZIP.
 2. Upload to WordPress via **Plugins > Add New**.
-3. Go to **Settings > Link Automator**.
+3. Left Menu Locate: SEO Linker.
 4. Add your keywords in the format: `Keyword|URL`
 
 **Example:**
