@@ -3,7 +3,7 @@
  * Plugin Name: WP Internal Link Automator
  * Plugin URI:  https://github.com/ikoanti/wp-internal-link-automator
  * Description: Automatically links specific keywords in post content to defined URLs. Uses a "First Match Only" logic to prevent SEO over-optimization.
- * Version:     1.1.0
+ * Version:     1.2.0
  * Author:      ikoanti
  * Author URI:  https://github.com/ikoanti
  * License:     GNU GENERAL PUBLIC LICENSE
@@ -12,28 +12,18 @@
 
 if (!defined('ABSPATH')) exit;
 
-class WP_Internal_Link_Automator {
+class WP_Internal_Link_Automator_V1_2 {
 
     public function __construct() {
-        // 1. Hook the Backend Menu
         add_action('admin_menu', [$this, 'iko_add_admin_menu']);
         add_action('admin_init', [$this, 'iko_register_settings']);
-
-        // 2. Hook the Frontend Linker (Priority 99)
-        add_filter('the_content', [$this, 'iko_process_content'], 99);
+        
+        // Priority 999: Run even later to beat SEO plugins
+        add_filter('the_content', [$this, 'iko_process_content'], 999);
     }
 
-    // --- BACKEND LOGIC ---
-
     public function iko_add_admin_menu() {
-        add_menu_page(
-            'SEO Linker',           // Page Title
-            'SEO Linker',           // Menu Title
-            'manage_options',       // Capability
-            'seo-linker-settings',  // Menu Slug
-            [$this, 'iko_render_admin_page'],
-            'dashicons-admin-links' // Icon
-        );
+        add_menu_page('SEO Linker', 'SEO Linker', 'manage_options', 'seo-linker-settings', [$this, 'iko_render_admin_page'], 'dashicons-admin-links');
     }
 
     public function iko_register_settings() {
@@ -43,34 +33,24 @@ class WP_Internal_Link_Automator {
     public function iko_render_admin_page() {
         ?>
         <div class="wrap">
-            <h1>WP Internal Link Automator <span style="font-size:12px; color:#999;">v1.1</span></h1>
+            <h1>SEO Linker v1.2</h1>
             <form method="post" action="options.php">
                 <?php settings_fields('wila_settings_group'); ?>
-                <?php do_settings_sections('wila_settings_group'); ?>
-                
-                <table class="form-table">
-                    <tr valign="top">
-                        <th scope="row">Keyword Rules<br><small>(One per line: Keyword|URL)</small></th>
-                        <td>
-                            <textarea name="wila_keywords_list" rows="10" cols="50" class="large-text" placeholder="Example: WordPress SEO|https://site.com/seo-guide/"><?php echo esc_textarea(get_option('wila_keywords_list')); ?></textarea>
-                        </td>
-                    </tr>
-                </table>
-                <?php submit_button('Save SEO Rules'); ?>
+                <textarea name="wila_keywords_list" rows="10" cols="50" class="large-text" placeholder="Keyword|URL"><?php echo esc_textarea(get_option('wila_keywords_list')); ?></textarea>
+                <?php submit_button(); ?>
             </form>
+            <p><strong>Pro-Tip:</strong> Ensure there are no spaces around the <code>|</code> symbol.</p>
         </div>
         <?php
     }
 
-    // --- FRONTEND ENGINE ---
-
     public function iko_process_content($content) {
-        if (!is_singular() || !is_main_query() || is_admin()) return $content;
+        // 1. Remove the "is_main_query" check temporarily to see if your theme is causing the block
+        if (!is_singular() || is_admin()) return $content;
 
         $raw_rules = get_option('wila_keywords_list');
         if (empty($raw_rules)) return $content;
 
-        // Parse the textarea lines into an array
         $lines = explode("\n", str_replace("\r", "", $raw_rules));
         $rules = [];
         foreach ($lines as $line) {
@@ -80,18 +60,21 @@ class WP_Internal_Link_Automator {
             }
         }
 
-        // Sort by length to protect long-tail keywords
-        uksort($rules, function($a, $b) { return strlen($b) - strlen($a); });
+        uksort($rules, function($a, $b) { return mb_strlen($b) - mb_strlen($a); });
 
         foreach ($rules as $keyword => $url) {
             $quoted = preg_quote($keyword, '/');
-            // Regex prevents linking inside <a> tags or HTML attributes
-            $pattern = '/(?!(?:[^<]*<[^>]+>)*[^<]*<\/a>)(?![^<]*>)\b' . $quoted . '\b/i';
+            
+            /* * THE FIXES:
+             * 1. Added 'u' flag at the end for UTF-8 support (Cyrillic/Georgian).
+             * 2. Replaced \b with (?<!\p{L}) and (?!\p{L}) for universal word boundaries.
+             */
+            $pattern = '/(?!(?:[^<]*<[^>]+>)*[^<]*<\/a>)(?![^<]*>)(?<!\p{L})' . $quoted . '(?!\p{L})/iu';
+            
             $content = preg_replace($pattern, '<a href="' . esc_url($url) . '" class="auto-link">' . esc_html($keyword) . '</a>', $content, 1);
         }
 
         return $content;
     }
 }
-
-new WP_Internal_Link_Automator();
+new WP_Internal_Link_Automator_V1_2();
