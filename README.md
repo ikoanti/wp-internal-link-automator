@@ -21,5 +21,5 @@ This plugin parses post content and automatically links targeted keywords to spe
 
 **Example:**
 ```text
-SEO Audit|[https://example.com/services/audit](https://example.com/services/audit)
-Technical SEO|[https://example.com/blog/technical-seo-guide](https://example.com/blog/technical-seo-guide)
+SEO Audit|https://example.com/services/audit
+Technical SEO|https://example.com/blog/technical-seo-guide
